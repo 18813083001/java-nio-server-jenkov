@@ -41,10 +41,10 @@ public class HttpMessageReader implements IMessageReader {
         }
 
         this.nextMessage.writeToMessage(byteBuffer);
-
+        //请求行、请求头、请求体，如果返回-1，说明还没有接受完所有的数据，
         int endIndex = HttpUtil.parseHttpRequest(this.nextMessage.sharedArray, this.nextMessage.offset, this.nextMessage.offset + this.nextMessage.length, (HttpHeaders) this.nextMessage.metaData);
         if(endIndex != -1){
-            Message message = this.messageBuffer.getMessage();
+            Message message = this.messageBuffer.getMessage();//发送的数据可能包含下一个message
             message.metaData = new HttpHeaders();
 
             message.writePartialMessageToMessage(nextMessage, endIndex);

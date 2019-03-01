@@ -26,13 +26,13 @@ public class Main {
             System.out.println("Message Received from socket: " + request.socketId);
 
             Message response = writeProxy.getMessage();
-            response.socketId = request.socketId;
+            response.socketId = request.socketId;//可以根据socketId在Map中找到需要写入的socket
             response.writeToMessage(httpResponseBytes);
 
             writeProxy.enqueue(response);
         };
 
-        Server server = new Server(9999, new HttpMessageReaderFactory(), messageProcessor);
+        Server server = new Server(9090, new HttpMessageReaderFactory(), messageProcessor);
 
         server.start();
 

@@ -4,6 +4,12 @@ import java.io.UnsupportedEncodingException;
 
 /**
  * Created by jjenkov on 19-10-2015.
+ *
+ * 请求报文和响应报文都是由以下4部分组成
+ * 1.请求行
+ * 2.请求头
+ * 3.空行
+ * 4.消息主体
  */
 public class HttpUtil {
 
@@ -15,7 +21,8 @@ public class HttpUtil {
 
     private static final byte[] HOST           = new byte[]{'H','o','s','t'};
     private static final byte[] CONTENT_LENGTH = new byte[]{'C','o','n','t','e','n','t','-','L','e','n','g','t','h'};
-
+    //sharedArray包含的数据必须是请求行、消息头、消息体，且消息体的长度必须和Content——Length的值一样
+    //如果消息体的实际长度大于Content——Length，那么大于部分的消息必须是下一个标准的http消息
     public static int parseHttpRequest(byte[] src, int startIndex, int endIndex, HttpHeaders httpHeaders){
 
 
@@ -25,16 +32,18 @@ public class HttpUtil {
         resolveHttpMethod(src, startIndex, httpHeaders);
         */
 
-        //parse HTTP request line
+        //parse HTTP request line 解析请求行
         int endOfFirstLine = findNextLineBreak(src, startIndex, endIndex);
         if(endOfFirstLine == -1) return -1;
 
 
-        //parse HTTP headers
-        int prevEndOfHeader = endOfFirstLine + 1;
+        //parse HTTP headers 解析头信息
+        int prevEndOfHeader = endOfFirstLine + 1; //endOfFirstLine是\n的下标，endOfFirstLine-1是\r的下标，prevEndOfHeader+1是下一行的开头字母下标
         int endOfHeader = findNextLineBreak(src, prevEndOfHeader, endIndex);
-
-        while(endOfHeader != -1 && endOfHeader != prevEndOfHeader + 1){    //prevEndOfHeader + 1 = end of previous header + 2 (+2 = CR + LF)
+        // endOfHeader != prevEndOfHeader + 1 判断是否是空行，
+        // 空行 http协议规定的格式，一般采用\r\n (（如果是空行：prevEndOfHeader=\r，prevEndOfHeader+1=\n）
+        // 如果消息头结束了，endOfHeader 指向的下标是\r\n中的\n
+        while(endOfHeader != -1 && endOfHeader != prevEndOfHeader + 1){    //prevEndOfHeader + 1 = end of previous header + 2 (+2 = CR + LF) CR=\r(回车) LF=\n（换行）
 
             if(matches(src, prevEndOfHeader, CONTENT_LENGTH)){
                 try {
@@ -55,7 +64,7 @@ public class HttpUtil {
         //check that byte array contains full HTTP message.
         int bodyStartIndex = endOfHeader + 1;
         int bodyEndIndex  = bodyStartIndex + httpHeaders.contentLength;
-
+        //endIndex是当前缓冲池里最后一个字节是下标，如果endIndex==bodyEndIndex，说明数据已经接受完了，如果bodyEndIndex < endIndex,说明数据的实际长度大于Content-Length说明的长度
         if(bodyEndIndex <= endIndex){
             //byte array contains a full HTTP request
             httpHeaders.bodyStartIndex = bodyStartIndex;

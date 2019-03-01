@@ -85,13 +85,13 @@ public class Message {
     /**
      * In case the buffer backing the nextMessage contains more than one HTTP message, move all data after the first
      * message to a new Message object.
-     *
+     * 包含多个http消息头，消息体？
      * @param message   The message containing the partial message (after the first message).
      * @param endIndex  The end index of the first message in the buffer of the message given as parameter.
      */
-    public void writePartialMessageToMessage(Message message, int endIndex){
+    public void writePartialMessageToMessage(Message message, int endIndex){//说明数据的实际长度大于Content-Length说明的长度,可能是下一个http消息
         int startIndexOfPartialMessage = message.offset + endIndex;
-        int lengthOfPartialMessage     = (message.offset + message.length) - endIndex;
+        int lengthOfPartialMessage     = (message.offset + message.length) - endIndex;//消息的总长度（message.offset + message.length）减去 第一个http消息的长度（endIndex）
 
         System.arraycopy(message.sharedArray, startIndexOfPartialMessage, this.sharedArray, this.offset, lengthOfPartialMessage);
     }

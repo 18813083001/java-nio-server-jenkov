@@ -25,11 +25,12 @@ public class MessageWriter {
         }
     }
 
+    //messageInProgress是在takeNewOutboundMessages()方法中从outboundMessageQueue队列中取出的
     public void write(Socket socket, ByteBuffer byteBuffer) throws IOException {
         byteBuffer.put(this.messageInProgress.sharedArray, this.messageInProgress.offset + this.bytesWritten, this.messageInProgress.length - this.bytesWritten);
         byteBuffer.flip();
 
-        this.bytesWritten += socket.write(byteBuffer);
+        this.bytesWritten += socket.write(byteBuffer);//byteBuffer可能没有写完，但是没关系，bytesWritten会记住待写数据的下标，下一次循环时，再从messageInProgress.sharedArray读取
         byteBuffer.clear();
 
         if(bytesWritten >= this.messageInProgress.length){

@@ -165,7 +165,7 @@ public class SocketProcessor implements Runnable {
                 socket.messageWriter.write(socket, this.writeByteBuffer);
 
                 if(socket.messageWriter.isEmpty()){
-                    this.nonEmptyToEmptySockets.add(socket);
+                    this.nonEmptyToEmptySockets.add(socket);//当前数据已经写完了,不需要再注册到Selector,
                 }
 
                 keyIterator.remove();
@@ -184,10 +184,16 @@ public class SocketProcessor implements Runnable {
     }
 
     private void cancelEmptySockets() {
-        for(Socket socket : nonEmptyToEmptySockets){
+        for(Socket socket : nonEmptyToEmptySockets){//数据已经写完了 不要再监听了,但是如果有消息来时，还是会再次注册socketChannel
             SelectionKey key = socket.socketChannel.keyFor(this.writeSelector);
 
             key.cancel();
+            //自己添加的，原来没有
+            try {
+                key.channel().close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         nonEmptyToEmptySockets.clear();
     }
@@ -195,14 +201,14 @@ public class SocketProcessor implements Runnable {
     private void takeNewOutboundMessages() {
         Message outMessage = this.outboundMessageQueue.poll();
         while(outMessage != null){
-            Socket socket = this.socketMap.get(outMessage.socketId);
+            Socket socket = this.socketMap.get(outMessage.socketId);//如果socket.endOfStreamReached为true，该socket已经关闭
 
-            if(socket != null){
+            if(socket != null){//socket没有关闭，可以向该socket写入数据
                 MessageWriter messageWriter = socket.messageWriter;
                 if(messageWriter.isEmpty()){
                     messageWriter.enqueue(outMessage);
-                    nonEmptyToEmptySockets.remove(socket);
-                    emptyToNonEmptySockets.add(socket);    //not necessary if removed from nonEmptyToEmptySockets in prev. statement.
+                    nonEmptyToEmptySockets.remove(socket);  //如果有数据了，把放入删除队列的socket去掉
+                    emptyToNonEmptySockets.add(socket);    //用户注册socket的 not necessary if removed from nonEmptyToEmptySockets in prev. statement.
                 } else{
                    messageWriter.enqueue(outMessage);
                 }
