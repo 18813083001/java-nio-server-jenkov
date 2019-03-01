@@ -7,14 +7,18 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Created by chenlinsong on 2019/2/28.
  */
 public class SocketOne {
     @Test
-    public void socketOne() throws IOException {
+    public void socketSend() throws IOException {
         String message = "1234567890ab\r\n";
         System.out.println(message);
         System.out.println(message.getBytes().length);
@@ -37,7 +41,7 @@ public class SocketOne {
     }
 
     @Test
-    public void socketLoop() throws IOException, InterruptedException {
+    public void socketSendReceived() throws IOException, InterruptedException {
         String message = "1234567890ab\r\n";
         StringBuffer buffer = new StringBuffer();
         for (int i=0;i < 1;i++)
@@ -67,16 +71,28 @@ public class SocketOne {
     }
 
     @Test
-    public void stringToByte(){
-        String s = "123456";
-        System.out.println(s.getBytes());
-    }
-
-    @Test
     public void socketNio() throws IOException {
         SocketChannel socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
         socketChannel.connect(new InetSocketAddress("localhost", 9090));
+
+        writeBuffer(socketChannel);
+        readBuffer(socketChannel);
+
+        System.out.println("-------");
+
+        writeBuffer(socketChannel);
+        readBuffer(socketChannel);
+//        socketChannel.close();
+    }
+
+    @Test
+    public void socketNioLoop() throws IOException {
+        SocketChannel socketChannel = SocketChannel.open();
+        socketChannel.configureBlocking(false);
+        socketChannel.connect(new InetSocketAddress("localhost", 9090));
+
+
 
         writeBuffer(socketChannel);
         readBuffer(socketChannel);
